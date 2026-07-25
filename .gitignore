@@ -1,0 +1,13 @@
+/target/
+**/target/
+**/.embuild/
+**/managed_components/
+**/sdkconfig
+**/sdkconfig.old
+.env
+.env.*
+!.env.example
+*.bin
+*.elf
+*.map
+.DS_Store

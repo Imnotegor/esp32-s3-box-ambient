@@ -1,0 +1,17 @@
+[package]
+name = "box3-app"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "box3-app"
+harness = false
+
+[dependencies]
+esp-idf-svc = "=0.52.1"
+log = "0.4"
+
+[build-dependencies]
+embuild = "0.33"
