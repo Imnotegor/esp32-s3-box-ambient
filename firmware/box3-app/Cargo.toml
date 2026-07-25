@@ -10,8 +10,15 @@ name = "box3-app"
 harness = false
 
 [dependencies]
-esp-idf-svc = "=0.52.1"
-log = "0.4"
+esp-idf-sys = "=0.37.2"
 
 [build-dependencies]
 embuild = "0.33"
+
+[package.metadata.esp-idf-sys]
+esp_idf_components = ["pthread", "main", "box3-bridge"]
+
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["../components/box3-bridge"]
+bindings_header = "../components/box3-bridge/include/box3_bridge.h"
+bindings_module = "box3_bridge"
