@@ -11,3 +11,10 @@
 *.elf
 *.map
 .DS_Store
+__pycache__/
+*.key
+*.pem
+*.csr
+*.srl
+*.pcap
+development.json

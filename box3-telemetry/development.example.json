@@ -1,0 +1,17 @@
+{
+  "BOX3_SSH_HOST": "",
+  "BOX3_REMOTE_BINARY": "",
+  "BOX3_SERVER_NAME": "",
+  "BOX3_SERVER_DNS": "",
+  "BOX3_SERVER_IPS": "",
+  "BOX3_SERVER_IP": "",
+  "BOX3_READER_URL": "",
+  "BOX3_INGEST_ADDR": "",
+  "BOX3_READ_ADDR": "",
+  "BOX3_SERIAL_PORT": "",
+  "BOX3_DEVICE_MAC": "",
+  "BOX3_DEVICE_IP": "",
+  "BOX3_CAPTURE_INTERFACE": "",
+  "BOX3_WIFI_SSID": "",
+  "BOX3_WEATHER_URL": ""
+}

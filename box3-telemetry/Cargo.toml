@@ -1,0 +1,20 @@
+[package]
+name = "box3-telemetry"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.85"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+axum-server = { version = "0.7", features = ["tls-rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-pemfile = "2"
+hyper-util = { version = "0.1", features = ["tokio"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "fs", "signal", "time"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-webpki-roots"] }
+
+[dev-dependencies]
+tempfile = "3"

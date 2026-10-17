@@ -1,0 +1,8 @@
+{
+  "url": "https://reader.example.invalid/v1/latest",
+  "proxy": "127.0.0.1:10555",
+  "ca": "/absolute/private/path/device-ca.pem",
+  "cert": "/absolute/private/path/tmux.pem",
+  "key": "/absolute/private/path/tmux.key",
+  "cache": "/absolute/private/cache/status.json"
+}

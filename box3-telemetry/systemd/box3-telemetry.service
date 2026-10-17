@@ -1,0 +1,33 @@
+[Unit]
+Description=BOX-3 mutually authenticated HTTPS telemetry
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=box3-telemetry
+Group=box3-telemetry
+ExecStart=/usr/local/bin/box3-telemetry
+Environment=BOX3_PKI_DIR=/etc/box3-telemetry/pki
+Environment=BOX3_STATE_FILE=/var/lib/box3-telemetry/latest.json
+EnvironmentFile=/etc/box3-telemetry/runtime.env
+StateDirectory=box3-telemetry
+StateDirectoryMode=0700
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

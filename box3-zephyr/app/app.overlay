@@ -1,0 +1,100 @@
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+/* GT911 is mounted in native screen coordinates; compensate the panel's 180deg rotation. */
+&gt911 {
+    screen-width = <320>;
+    screen-height = <240>;
+    inverted-x;
+    inverted-y;
+};
+
+&pinctrl {
+    dock_i2c: dock_i2c {
+        group1 {
+            pinmux = <I2C1_SDA_GPIO41>, <I2C1_SCL_GPIO40>;
+            bias-pull-up;
+            drive-open-drain;
+            output-high;
+        };
+    };
+};
+
+&pinctrl {
+    audio_pins: audio_pins {
+        group1 {
+            pinmux = <I2S0_MCLK_GPIO2>, <I2S0_O_BCK_GPIO17>,
+                     <I2S0_O_WS_GPIO45>, <I2S0_O_SD_GPIO15>,
+                     <I2S0_I_SD_GPIO16>;
+        };
+    };
+};
+
+&pinctrl {
+    sd_pins: sd_pins {
+        group1 {
+            pinmux = <SDHC0_CMD_GPIO14>, <SDHC0_CLKOUT_GPIO11>,
+                     <SDHC0_DATA0_GPIO9>;
+            bias-pull-up;
+            output-high;
+        };
+    };
+};
+
+&sdhc {
+    status = "okay";
+};
+
+&sdhc0 {
+    status = "okay";
+    pinctrl-0 = <&sd_pins>;
+    pinctrl-names = "default";
+    bus-width = <1>;
+    max-bus-freq = <20000000>;
+    pwr-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
+    mmc {
+        compatible = "zephyr,sdmmc-disk";
+        disk-name = "SD";
+    };
+};
+
+&i2c0 {
+    imu: imu@68 {
+        compatible = "invensense,icm42607p";
+        reg = <0x68>;
+    };
+};
+
+&pinctrl {
+    ir_pins: ir_pins {
+        group1 {
+            pinmux = <LEDC_CH0_GPIO39>;
+            output-enable;
+        };
+    };
+};
+
+&ledc0 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+    pinctrl-0 = <&ir_pins>;
+    pinctrl-names = "default";
+    channel0@0 {
+        reg = <0>;
+        timer = <0>;
+    };
+};
+
+&i2s0 {
+    status = "okay";
+    pinctrl-0 = <&audio_pins>;
+    pinctrl-names = "default";
+};
+
+&i2c1 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    pinctrl-0 = <&dock_i2c>;
+    pinctrl-names = "default";
+};

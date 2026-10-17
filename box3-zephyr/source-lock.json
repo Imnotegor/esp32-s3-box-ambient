@@ -1,0 +1,10 @@
+{
+  "workspace/zephyr": "03b0b5443c7a760745826cc53c40e1986d753f86",
+  "workspace/modules/hal/espressif": "b16851b3c20e6fad3d2da42ec24a3e82d0b8b444",
+  "workspace/modules/hal/xtensa": "60224c27bed1466287f0246ac04c902b92331c29",
+  "workspace/modules/hal/tdk": "4e53fe1a1ea634dd8a13ecda1151a73bc598622f",
+  "workspace/modules/lib/gui/lvgl": "c9ffd4692de246eb911c7ba49b78a331b2c63c74",
+  "workspace/modules/crypto/mbedtls": "c43f34b93797e81fd0257c30004dcd0ae332ae51",
+  "workspace/modules/crypto/tf-psa-crypto": "765af96a20a2b408474dcd950372ba9af4d26b62",
+  "workspace/modules/crypto/tf-psa-crypto-drivers": "edb74a92e602cd21a218836aff41a0600229978c"
+}

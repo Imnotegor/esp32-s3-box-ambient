@@ -1,0 +1,15 @@
+/target/
+*.key
+*.pem
+*.csr
+*.srl
+.env
+.env.*
+development.json
+/artifacts/
+/preview/build/
+*.log
+*.bin
+*.elf
+*.pcap
+__pycache__/
