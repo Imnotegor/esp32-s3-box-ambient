@@ -12,6 +12,8 @@ The Rust service samples server metrics every 2 seconds. The BOX polls every 5 s
 
 The model's API is loopback-only; forecasts reach the BOX through the existing mTLS service. Persistent model state and automatic container restarts keep operation independent of a laptop. Cached values retain their age when a source is unavailable.
 
+See [`TODO.md`](TODO.md) for the model-status UI roadmap and acceptance checks.
+
 ## Repository layout
 
 | Directory | Purpose |
