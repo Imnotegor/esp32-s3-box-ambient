@@ -28,7 +28,7 @@ static uint8_t recv_buf[1024];
 static struct {
     int status;
     size_t length;
-    char body[1025];
+    char body[4097];
 } reply;
 
 static int send_now(const struct shell *sh, size_t argc, char **argv)

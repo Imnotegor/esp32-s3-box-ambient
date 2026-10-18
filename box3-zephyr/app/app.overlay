@@ -1,5 +1,20 @@
 #include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
+/* Match the BOX-3 BSP's 40 MHz display clock and use free GDMA channels. */
+&ili9342c {
+    mipi-max-frequency = <40000000>;
+};
+
+&spi2 {
+    dma-enabled;
+    dmas = <&dma 0>, <&dma 1>;
+    dma-names = "rx", "tx";
+};
+
+&dma {
+    status = "okay";
+};
+
 /* GT911 is mounted in native screen coordinates; compensate the panel's 180deg rotation. */
 &gt911 {
     screen-width = <320>;

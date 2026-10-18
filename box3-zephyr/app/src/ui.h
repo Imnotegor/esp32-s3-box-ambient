@@ -5,6 +5,7 @@
 #include "dashboard.h"
 void ui_init(void);
 void ui_show_page(unsigned page);
+void ui_weather_set(unsigned pressure, unsigned hours);
 void ui_pointer_debug(void);
 void ui_update(bool room_ok, int32_t temperature_mc, uint32_t humidity,
                bool wifi, bool uploaded, const struct dashboard_data *dashboard,

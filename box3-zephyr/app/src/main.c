@@ -17,6 +17,20 @@
 static const struct device *const dock = DEVICE_DT_GET(DT_NODELABEL(i2c1));
 static const struct device *const touch = DEVICE_DT_GET(DT_CHOSEN(zephyr_touch));
 static atomic_t requested_page = ATOMIC_INIT(-1);
+static atomic_t requested_weather = ATOMIC_INIT(-1);
+static uint32_t render_started, render_count, render_total_us, render_max_us;
+
+static void render_event(lv_event_t *event)
+{
+    if (lv_event_get_code(event) == LV_EVENT_RENDER_START) {
+        render_started = k_cycle_get_32();
+    } else {
+        uint32_t elapsed = k_cyc_to_us_floor32(k_cycle_get_32() - render_started);
+        render_count++;
+        render_total_us += elapsed;
+        render_max_us = MAX(render_max_us, elapsed);
+    }
+}
 
 static int page_command(const struct shell *sh, size_t argc, char **argv)
 {
@@ -29,6 +43,20 @@ static int page_command(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 SHELL_CMD_ARG_REGISTER(box3_page, NULL, "Select Home0/Server1/Weather2", page_command, 2, 0);
+
+static int weather_command(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    char *end;
+    unsigned long pressure = strtoul(argv[1], &end, 10);
+    if (!argv[1][0] || *end || pressure > 1) return -EINVAL;
+    unsigned long hours = strtoul(argv[2], &end, 10);
+    if (!argv[2][0] || *end || (hours != 24 && hours != 48)) return -EINVAL;
+    atomic_set(&requested_weather, pressure * 100 + hours);
+    shell_print(sh, "UI_WEATHER_QUEUED");
+    return 0;
+}
+SHELL_CMD_ARG_REGISTER(box3_weather, NULL, "Select temperature0/pressure1 and 24/48 hours", weather_command, 3, 0);
 
 static void touch_event(struct input_event *event, void *data)
 {
@@ -58,17 +86,16 @@ static uint8_t aht_crc(const uint8_t *data, size_t len)
     return crc;
 }
 
-static int read_aht30(int32_t *temp_mc, uint32_t *rh_milli)
+static int start_aht30(void)
 {
     const uint8_t trigger[] = {0xac, 0x33, 0x00};
-    uint8_t data[7];
-    int ret = i2c_write(dock, trigger, sizeof(trigger), AHT30_ADDRESS);
+    return device_is_ready(dock) ? i2c_write(dock, trigger, sizeof(trigger), AHT30_ADDRESS) : -ENODEV;
+}
 
-    if (ret < 0) {
-        return ret;
-    }
-    k_msleep(100);
-    ret = i2c_read(dock, data, sizeof(data), AHT30_ADDRESS);
+static int read_aht30(int32_t *temp_mc, uint32_t *rh_milli)
+{
+    uint8_t data[7];
+    int ret = i2c_read(dock, data, sizeof(data), AHT30_ADDRESS);
     if (ret < 0) {
         return ret;
     }
@@ -92,7 +119,7 @@ int main(void)
 {
     const struct device *display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
     bool screen = device_is_ready(display);
-    bool room_ok = false;
+    bool room_ok = false, sampling = false;
     int32_t temperature = 0;
     uint32_t humidity = 0;
     unsigned int samples = 0;
@@ -103,6 +130,8 @@ int main(void)
         struct display_capabilities caps;
         display_get_capabilities(display, &caps);
         printk("BOX3_DISPLAY width=%u height=%u orientation=%d\n", caps.x_resolution, caps.y_resolution, caps.current_orientation);
+        lv_display_add_event_cb(lv_display_get_default(), render_event, LV_EVENT_RENDER_START, NULL);
+        lv_display_add_event_cb(lv_display_get_default(), render_event, LV_EVENT_RENDER_READY, NULL);
         ui_init();
         lv_mem_monitor_t memory;
         lv_mem_monitor(&memory);
@@ -115,16 +144,30 @@ int main(void)
     while (1) {
         int64_t now = k_uptime_get();
         if (now >= next_sample) {
-            int ret = device_is_ready(dock) ? read_aht30(&temperature, &humidity) : -ENODEV;
-            room_ok = ret == 0;
-            telemetry_sample(ret, temperature, humidity);
-            printk("BOX3_PROBE sample=%u result=%d temperature_mC=%d humidity_milli_percent=%u%s\n",
-                   ++samples, ret, temperature, humidity, room_ok ? " CRC=OK" : "");
-            next_sample = k_uptime_get() + 2000;
+            int ret;
+            if (sampling) {
+                ret = read_aht30(&temperature, &humidity);
+                sampling = false;
+            } else {
+                ret = start_aht30();
+                sampling = ret == 0;
+            }
+            if (sampling) {
+                /* The sensor converts while the main thread keeps rendering. */
+                next_sample = k_uptime_get() + 100;
+            } else {
+                room_ok = ret == 0;
+                telemetry_sample(ret, temperature, humidity);
+                printk("BOX3_PROBE sample=%u result=%d temperature_mC=%d humidity_milli_percent=%u%s\n",
+                       ++samples, ret, temperature, humidity, room_ok ? " CRC=OK" : "");
+                next_sample = k_uptime_get() + 2000;
+            }
         }
         if (screen) {
             atomic_val_t page = atomic_set(&requested_page, -1);
             if (page >= 0) ui_show_page(page);
+            atomic_val_t weather = atomic_set(&requested_weather, -1);
+            if (weather >= 0) ui_weather_set(weather / 100, weather % 100);
             if (now >= next_ui) {
                 struct dashboard_data dashboard;
                 bool have = dashboard_copy(&dashboard);
@@ -140,6 +183,9 @@ int main(void)
                 int ret = k_thread_stack_space_get(k_current_get(), &unused);
                 printk("BOX3_UI health heap_used_pct=%u peak_bytes=%zu stack_free=%zu stack_info=%d\n",
                        memory.used_pct, memory.max_used, unused, ret);
+                printk("BOX3_UI render frames=%u avg_us=%u max_us=%u\n", render_count,
+                       render_count ? render_total_us / render_count : 0, render_max_us);
+                render_count = render_total_us = render_max_us = 0;
                 ui_pointer_debug();
                 next_health = k_uptime_get() + 10000;
             }
