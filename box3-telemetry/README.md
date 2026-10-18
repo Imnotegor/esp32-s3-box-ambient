@@ -13,6 +13,8 @@ ESP32-S3-BOX-3 → mTLS 1.3 Rust service → private VPN → cached tmux client.
 
 Three touchscreen pages show local temperature/RH, server metrics and outdoor weather. Server metrics are sampled every 2 seconds; the device polls every 5 seconds over reused TLS. Sensor uploads remain hourly. Missing/stale values are marked rather than fabricated.
 
+The optional CPU forecast relay is enabled with `BOX3_FORECAST_URL=http://127.0.0.1:8790/v1/box-forecast`. Only a literal loopback HTTP endpoint is accepted, and redirects are disabled. The neural service remains headless; all forecast charts are on BOX. A bounded `forecast` object is added to the existing mTLS dashboard, with temperature/pressure intervals and 25 fixed-point samples. Failed refreshes do not reset cached ages. Install the forecast-capable firmware before enabling this relay because its authenticated dashboard response can exceed the old firmware's 1024-byte buffer.
+
 ## Private deployment configuration
 
 There are no personal network, device or account defaults in the portable source.

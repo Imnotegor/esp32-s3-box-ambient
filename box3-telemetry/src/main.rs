@@ -1,4 +1,5 @@
 mod dashboard;
+mod forecast;
 
 use anyhow::{Context, Result};
 use axum::{
@@ -192,6 +193,10 @@ async fn main() -> Result<()> {
     let dashboard = dashboard::start(
         path.with_file_name("weather.json"),
         env::var("BOX3_WEATHER_URL")?,
+        env::var("BOX3_FORECAST_URL")
+            .ok()
+            .map(|url| forecast::validate_url(&url))
+            .transpose()?,
     );
     let store = Arc::new(Store {
         path,

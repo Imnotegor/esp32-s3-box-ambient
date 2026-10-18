@@ -7,6 +7,7 @@ use tokio::sync::RwLock;
 pub struct DashboardState {
     metrics: Option<Metrics>,
     weather: Option<Weather>,
+    pub(crate) forecast: Option<crate::forecast::Cached>,
 }
 
 pub type Shared = Arc<RwLock<DashboardState>>;
@@ -52,6 +53,7 @@ pub struct DeviceDashboard {
     pub weather_text: String,
     pub weather_age_secs: i32,
     pub weather_stale: bool,
+    pub forecast: crate::forecast::Forecast,
 }
 
 fn age(now: u64, then: u64) -> i32 {
@@ -82,6 +84,9 @@ pub async fn snapshot(shared: &Shared) -> DeviceDashboard {
         out.weather_humidity_percent = w.humidity;
         out.weather_kind = w.kind;
         out.weather_text = w.text.clone();
+    }
+    if let Some(forecast) = &state.forecast {
+        out.forecast = forecast.snapshot(now);
     }
     out
 }
@@ -291,7 +296,7 @@ async fn collect_weather(state: Shared, path: PathBuf, url: String) {
     }
 }
 
-pub fn start(path: PathBuf, weather_url: String) -> Shared {
+pub fn start(path: PathBuf, weather_url: String, forecast_url: Option<reqwest::Url>) -> Shared {
     let weather = fs::read(&path)
         .ok()
         .and_then(|b| serde_json::from_slice::<Weather>(&b).ok())
@@ -308,9 +313,13 @@ pub fn start(path: PathBuf, weather_url: String) -> Shared {
     let state = Arc::new(RwLock::new(DashboardState {
         metrics: None,
         weather,
+        forecast: None,
     }));
     tokio::spawn(collect_metrics(state.clone()));
     tokio::spawn(collect_weather(state.clone(), path, weather_url));
+    if let Some(url) = forecast_url {
+        tokio::spawn(crate::forecast::collect(state.clone(), url));
+    }
     state
 }
 

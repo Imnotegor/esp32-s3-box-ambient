@@ -11,6 +11,11 @@ pki = Path.home() / ".local/share/box3-telemetry/pki"
 files = {name: base64.b64encode((pki / name).read_bytes()).decode()
          for name in ["server.pem", "server.key", "device-ca.pem", "reader-ca.pem"]}
 runtime = {key: os.environ[key] for key in ["BOX3_INGEST_ADDR", "BOX3_READ_ADDR", "BOX3_WEATHER_URL"]}
+if os.environ.get("BOX3_FORECAST_URL"):
+    forecast = urlsplit(os.environ["BOX3_FORECAST_URL"])
+    if forecast.scheme != "http" or forecast.hostname not in {"127.0.0.1", "::1"} or forecast.path != "/v1/box-forecast" or forecast.username or forecast.password or forecast.query:
+        raise SystemExit("Forecast endpoint must be loopback HTTP /v1/box-forecast")
+    runtime["BOX3_FORECAST_URL"] = os.environ["BOX3_FORECAST_URL"]
 if any(any(c.isspace() for c in value) for value in runtime.values()) or urlsplit(runtime["BOX3_WEATHER_URL"]).scheme != "https":
     raise SystemExit("Invalid private service settings")
 files["environment"] = base64.b64encode("".join(k + "=" + json.dumps(v) + "\n" for k, v in runtime.items()).encode()).decode()
