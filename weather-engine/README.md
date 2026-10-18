@@ -57,6 +57,24 @@ The listener is loopback-only. Configure the existing telemetry service with `BO
 
 Imported responses use `{"received_at": UNIX_SECONDS, "response": WTTR_JSON}` and must arrive chronologically. This imports real saved responses; it does not reconstruct unobserved history. Historical collection dates must leave at least seven days for publication. A normal refresh never requires retraining.
 
+## Continuous operation in Docker
+
+`compose.yaml` runs the engine continuously with `restart: unless-stopped`, a read-only root filesystem, an unprivileged UID/GID 10001, two CPU cores and 512 MiB RAM. Enable the Docker daemon at boot. Host networking avoids a public port mapping; the application still refuses non-loopback listeners. This is not network-namespace isolation: use this configuration only on a trusted host. The healthcheck measures API availability, not provider freshness; `/api/state` reports data status separately. Logs rotate automatically.
+
+Keep configuration and trained state outside the build context and Git. Set `BOX3_WEATHER_CONFIG` and `BOX3_WEATHER_STATE_DIR` to existing absolute host paths; the JSON's `state_dir` must be `/var/lib/box3-weather-engine`. Give UID 10001 write access to the state directory and read access to the configuration (for example, root:10001 mode 0640). Seed state with `active-wttr-model.json`, its matching `wttr-models/<generation>/manifest.json` and three checksum-verified weight files, plus any genuine `wttr/` observation archive. Do not initialize an empty volume over the trained model.
+
+```sh
+export BOX3_WEATHER_CONFIG=/etc/box3-weather-engine/config.json
+export BOX3_WEATHER_STATE_DIR=/var/lib/box3-weather-engine
+export BOX3_IMAGE_TAG=local
+docker compose build
+docker compose up -d --no-build
+curl --fail http://127.0.0.1:8790/v1/box-forecast
+docker compose ps
+```
+
+Run from `weather-engine/`, using an administrator account authorized to manage Docker. No private settings, weights, provider responses or credentials enter the image: `.dockerignore` admits only the Rust source, manifests and Dockerfile. The build runs locked release-mode unit tests. No GPU is used. Each refresh combines trained weights with current observations and saved real history; it does not retrain. The existing explicit `adapt` job remains separately gated on sufficient history and holdout improvement. Never run concurrent state-mutating training/adaptation jobs against the live state directory; validate a candidate separately and restart the engine after promotion. Do not run the standalone systemd engine and this container on the same port.
+
 ## Artifacts and checks
 
 - `active-wttr-model.json`, `wttr-models/<generation>/`: version 3 weights, checksums, calibration, reports and optional adaptation decisions. Earlier generations remain intact.
@@ -73,6 +91,6 @@ cargo test --locked
 cargo clippy --all-targets --locked -- -D warnings
 ```
 
-Tests cover CPU backpropagation, optimized output/gradient equivalence, future-data isolation, normalization and temporal boundaries, current-input mapping, missing history, source deduplication, subsequent-value scoring and adaptation target masks. The BOX implementation is verified using native LVGL snapshots, protocol checks and hardware USB delivery; deployment of the new relay on the target host still requires SSH access. The earlier `tools/compare_archived_nwp.py` utility concerns the retained regional v2 experiment, not the active wttr model.
+Tests cover CPU backpropagation, optimized output/gradient equivalence, future-data isolation, normalization and temporal boundaries, current-input mapping, missing history, source deduplication, subsequent-value scoring and adaptation target masks. The BOX implementation is verified using native LVGL snapshots, protocol checks and hardware USB delivery; deployment of the relay and verification of the complete live path remain separate operational checks. The earlier `tools/compare_archived_nwp.py` utility concerns the retained regional v2 experiment, not the active wttr model.
 
 Source contracts: [wttr JSON format](https://github.com/chubin/wttr.in#json-output), [Open-Meteo historical data](https://open-meteo.com/en/docs/historical-weather-api).

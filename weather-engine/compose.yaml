@@ -1,0 +1,37 @@
+name: box3-weather
+services:
+  engine:
+    image: box3-weather-engine:${BOX3_IMAGE_TAG:-local}
+    build:
+      context: .
+      network: host
+    network_mode: host
+    restart: unless-stopped
+    init: true
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 2.0
+    mem_limit: 512m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    volumes:
+      - type: bind
+        source: ${BOX3_WEATHER_CONFIG:?Set the absolute private config path}
+        target: /etc/box3-weather-engine/config.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BOX3_WEATHER_STATE_DIR:?Set the absolute persistent state path}
+        target: /var/lib/box3-weather-engine
+        bind:
+          create_host_path: false
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"

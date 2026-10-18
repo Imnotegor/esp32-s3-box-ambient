@@ -135,8 +135,9 @@ async fn latest(State(store): State<Arc<Store>>) -> Result<Json<Latest>, StatusC
 async fn device_dashboard(State(store): State<Arc<Store>>) -> impl IntoResponse {
     let data = dashboard::snapshot(&store.dashboard).await;
     match serde_json::to_vec(&data) {
-        Ok(mut bytes) if bytes.len() <= 1024 => {
-            bytes.resize(1024, b' ');
+        Ok(mut bytes) if bytes.len() <= 4096 => {
+            let frame_size = if bytes.len() <= 1024 { 1024 } else { 4096 };
+            bytes.resize(frame_size, b' ');
             (
                 [
                     (header::CONTENT_TYPE, "application/json"),
@@ -302,6 +303,54 @@ mod tests {
         let Json(readback) = latest(State(store)).await.unwrap();
         assert!(!readback.stale);
         assert_eq!(readback.measurement.sequence, 1);
+    }
+
+    #[tokio::test]
+    async fn dashboard_http_response_supports_forecast_and_preserves_small_frames() {
+        for with_forecast in [false, true] {
+            let mut dashboard = dashboard::DashboardState::default();
+            if with_forecast {
+                dashboard.forecast = Some(forecast::Cached {
+                    received: unix_now().unwrap(),
+                    data: forecast::Forecast {
+                        ok: true,
+                        age_secs: 0,
+                        source_age_secs: 60,
+                        temp_centi: 1400,
+                        pressure_dhpa: 10190,
+                        points: (0..48)
+                            .filter(|i| *i < 23 && i % 2 == 0 || *i >= 23 && i % 2 == 1)
+                            .map(|i| forecast::Point {
+                                m: (i + 1) * 60,
+                                t: 1400,
+                                p: 10190,
+                                lo: 1000,
+                                hi: 1800,
+                                pl: 10000,
+                                ph: 10300,
+                            })
+                            .collect(),
+                    },
+                });
+            }
+            let store = Arc::new(Store {
+                path: PathBuf::new(),
+                latest: RwLock::new(None),
+                dashboard: Arc::new(RwLock::new(dashboard)),
+            });
+            let response = device_dashboard(State(store)).await.into_response();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+            let body = axum::body::to_bytes(response.into_body(), 4096)
+                .await
+                .unwrap();
+            assert_eq!(body.len(), if with_forecast { 4096 } else { 1024 });
+            let parsed: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(parsed["forecast"]["ok"], with_forecast);
+            if with_forecast {
+                assert_eq!(parsed["forecast"]["points"].as_array().unwrap().len(), 25);
+            }
+        }
     }
 
     #[test]
