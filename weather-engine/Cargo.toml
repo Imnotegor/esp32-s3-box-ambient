@@ -1,0 +1,23 @@
+[package]
+name = "box3-weather-engine"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "tokio"] }
+candle-core = { version = "=0.9.2", default-features = false }
+candle-nn = { version = "=0.9.2", default-features = false }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+rand = "0.9"
+rand_distr = "0.5"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["macros", "rt", "time", "net", "signal", "sync"] }
+
+[profile.release]
+opt-level = 3

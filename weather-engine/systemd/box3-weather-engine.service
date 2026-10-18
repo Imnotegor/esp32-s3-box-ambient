@@ -1,0 +1,18 @@
+[Unit]
+Description=Local CPU weather model and wttr dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/box3-weather-engine --config %h/.config/box3-weather-engine/config.json --threads 2 serve --bind 127.0.0.1:8790 --refresh-seconds 600
+Restart=on-failure
+RestartSec=20
+Nice=10
+MemoryMax=256M
+CPUQuota=100%
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

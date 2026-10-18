@@ -2,7 +2,7 @@
 members = [
     "firmware/box3-app",
 ]
-exclude = ["box3-telemetry"]
+exclude = ["box3-telemetry", "weather-engine"]
 resolver = "2"
 
 [workspace.package]
