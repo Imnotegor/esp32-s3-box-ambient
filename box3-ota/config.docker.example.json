@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "state_dir": "/var/lib/box3-ota",
+  "database_path": "/var/lib/box3-ota/ota.db",
+  "runtime_dir": "/run/box3-ota",
+  "device_socket_path": "/run/box3-ota/device.sock",
+  "admin_listen": "127.0.0.1:REPLACE_WITH_HOST_PORT",
+  "container_only_allow_wildcard": false,
+  "admin_token_file": "/etc/box3-ota/admin.token",
+  "admin_allowed_hosts": [
+    "localhost:REPLACE_WITH_HOST_PORT",
+    "127.0.0.1:REPLACE_WITH_HOST_PORT"
+  ],
+  "admin_allowed_origins": [
+    "http://localhost:REPLACE_WITH_HOST_PORT",
+    "http://127.0.0.1:REPLACE_WITH_HOST_PORT"
+  ],
+  "read_header_timeout": "5s",
+  "read_timeout": "15s",
+  "idle_timeout": "1m",
+  "shutdown_timeout": "30s",
+  "sqlite_busy_timeout": "5s"
+}

@@ -1,0 +1,57 @@
+name: box3-ota
+services:
+  server:
+    image: box3-ota:${BOX3_OTA_IMAGE_TAG:?Set an explicit immutable deployment tag}
+    build:
+      context: .
+      network: host
+    network_mode: host
+    command: ["--config", "/etc/box3-ota/config.json", "--require-loopback"]
+    user: "10001:10001"
+    group_add:
+      - "${BOX3_OTA_SOCKET_GID:?Set the numeric runtime directory group}"
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 40s
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 1.0
+    mem_limit: 192m
+    pids_limit: 64
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    volumes:
+      - type: bind
+        source: ${BOX3_OTA_CONFIG:?Set the absolute private config file}
+        target: /etc/box3-ota/config.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BOX3_OTA_TOKEN:?Set the absolute private token file}
+        target: /etc/box3-ota/admin.token
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BOX3_OTA_STATE_DIR:?Set the persistent state directory}
+        target: /var/lib/box3-ota
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BOX3_OTA_RUNTIME_DIR:?Set the shared host runtime directory}
+        target: /run/box3-ota
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "/box3-ota", "--config", "/etc/box3-ota/config.json", "--check-ready"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
