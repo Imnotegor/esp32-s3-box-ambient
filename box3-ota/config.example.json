@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "state_dir": "/ABSOLUTE/PERSISTENT/STATE/DIRECTORY",
+  "database_path": "/ABSOLUTE/PERSISTENT/STATE/DIRECTORY/box3-ota.db",
+  "runtime_dir": "/ABSOLUTE/SHARED/RUNTIME/DIRECTORY",
+  "device_socket_path": "/ABSOLUTE/SHARED/RUNTIME/DIRECTORY/device.sock",
+  "admin_listen": "127.0.0.1:REPLACE_WITH_PORT",
+  "container_only_allow_wildcard": false,
+  "admin_token_file": "/ABSOLUTE/SECRET/DIRECTORY/admin.token",
+  "admin_allowed_hosts": ["REPLACE_WITH_EXACT_HOST_AND_PORT"],
+  "admin_allowed_origins": ["http://REPLACE_WITH_EXACT_HOST_AND_PORT"],
+  "read_header_timeout": "5s",
+  "read_timeout": "15s",
+  "idle_timeout": "1m",
+  "shutdown_timeout": "30s",
+  "sqlite_busy_timeout": "5s"
+}
