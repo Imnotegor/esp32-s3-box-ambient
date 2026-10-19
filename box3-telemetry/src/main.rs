@@ -167,6 +167,8 @@ fn tls(pki: &Path, client_ca: &str) -> Result<axum_server::tls_rustls::RustlsCon
     let mut config = ServerConfig::builder()
         .with_client_cert_verifier(verifier)
         .with_single_cert(read_certs("server.pem")?, key)?;
+    // HTTP headers plus a 4 KiB body exceed the BOX's 4 KiB TLS input limit.
+    config.max_fragment_size = Some(2048);
     config.alpn_protocols = vec![b"http/1.1".to_vec()];
     Ok(axum_server::tls_rustls::RustlsConfig::from_config(
         Arc::new(config),
